@@ -1,0 +1,294 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
+
+/**
+ *
+ * @author Kevin Arnold
+ */
+public class ConexionDB {
+      
+    public static Connection GetConnection()
+    {
+        Connection conexion=null;
+      
+        try
+        {
+            Class.forName("com.mysql.jdbc.Driver");
+            String servidor = "jdbc:mysql://localhost/cdcol";
+            String usuarioDB="root";
+            String passwordDB="12345";
+            conexion= DriverManager.getConnection(servidor,usuarioDB,passwordDB);
+        }
+        catch(ClassNotFoundException ex)
+        {
+            JOptionPane.showMessageDialog(null, ex, "Error1 en la Conexión con la BD "+ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+            conexion=null;
+        }
+        catch(SQLException ex)
+        {
+            JOptionPane.showMessageDialog(null, ex, "Error2 en la Conexión con la BD "+ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+            conexion=null;
+        }
+        catch(Exception ex)
+        {
+            JOptionPane.showMessageDialog(null, ex, "Error3 en la Conexión con la BD "+ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+            conexion=null;
+        }
+        finally
+        {
+            return conexion;
+        }
+    }
+}
+
+*********************
+import java.sql.Connection;
+import javax.swing.JOptionPane;
+
+/**
+ *
+ * @author Kevin Arnold
+ */
+public class Main {
+    public static void main(String[] args)
+    {
+        Connection miConexion;
+        miConexion=ConexionDB.GetConnection();
+      
+        if(miConexion!=null)
+        {
+            JOptionPane.showMessageDialog(null, "Conexión Realizada Correctamente");
+        }
+    }
+}
+
+**********************
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class ConectarDB {
+
+    public static void main(String[] args) {
+        Connection con = null;
+        Statement stat = null;
+
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/java1",
+                    "root", "");
+
+            // Creamos un Statement para poder hacer peticiones a la bd
+            stat = con.createStatement();
+
+            // Insertar 2 filas en la tabla Motor
+            String insertar = "INSERT INTO Motor VALUES ('Ferrari','F1','600')";
+            stat.executeUpdate(insertar);
+            insertar = "INSERT INTO Motor VALUES ('Porche','GT3 RS','450')";
+            stat.executeUpdate(insertar);
+
+            // Seleccionar todos los datos ordenados por potencia
+            String seleccionar = "SELECT * FROM Motor ORDER BY Potencia DESC";
+            ResultSet rs = stat.executeQuery(seleccionar);
+
+            // Recorrer todas las filas de la tabla Motor
+            System.out.println("Marca\tModelo\tPotencia\n");
+            while (rs.next()) {
+                System.out.println(rs.getString("Marca") + "\t"
+                        + rs.getString("Modelo") + "\t"
+                        + rs.getString("Potencia") + "\n");
+            }
+        } catch (ClassNotFoundException | SQLException e) {
+            System.out.println("Error: " + e.getMessage());
+            
+        } finally {
+            if (stat != null) {
+                try {
+                    stat.close();
+                } catch (SQLException ex) {
+                    Logger.getLogger(ConectarDB.class.getName())
+                                        .log(Level.SEVERE, null, ex);
+                }
+            }
+            if (con != null) {
+                try {
+                    con.close();
+                } catch (SQLException ex) {
+                    Logger.getLogger(ConectarDB.class.getName())
+                                        .log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
+}
+***************************************************
+
+El ejemplo consta de 2 paginas la primera pagina:
+
+donde se conecta a la base de datos
+index.jsp
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+<!-- en la directiva page observamos el import="java.sql.*"-->
+<!-- esta es la analogia en java a importar paquetes y/o clases-->
+<!-- en el paquete java.sql.* estan las clases necesarias-->
+<!-- para la conexion a la bd mysql -->
+<%@ page language="java" import="java.sql.*" %>
+<%
+    /*conexion sera nuestra conexion a la bd*/
+    Connection conexion=null;
+ 
+    String mensaje="";
+ 
+    /*parametros para la conexion*/
+    String driver = "com.mysql.jdbc.Driver";
+    String url = "jdbc:mysql://localhost:3306/prueba";
+    String usuario = "root";
+    String clave = "";
+    /*procedimiento de la conexion*/
+    try{
+        Class.forName(driver);
+        conexion = DriverManager.getConnection(url,usuario,clave);
+ 
+        /*guardando la conexion en la session*/
+        session.setAttribute("conexion",conexion);
+    } catch (Exception ex){
+        mensaje=ex.toString();
+    }
+ 
+    mensaje="conectado";
+    if(conexion.isClosed()){
+        mensaje="desconectado";
+    }
+%>
+<html>
+    <head>
+        <title>EJERCICIO 03 CONEXION BD CON JSP</title>
+    </head>
+    <body>
+        <form action="desconectar.jsp" method="post">
+            <input name="estado" type="text" value="Estado: <%=mensaje%>"/>
+            <input type="submit" value="Desconectar"/>
+        </form>
+    </body>
+</html>
+la segunda pagina:
+donde se extrae la conexión de la session y se cierra
+
+desconectar.jsp
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+<!-- en la directiva page observamos el import="java.sql.*"-->
+<!-- esta es la analogia en java a importar paquetes y/o clases-->
+<!-- en el paquete java.sql.* estan las clases necesarias-->
+<!-- para la conexion a la bd mysql -->
+<%@ page language="java" import="java.sql.*" %>
+<%
+    /*conexion sera nuestra conexion a la bd*/
+    Connection conexion=null;
+ 
+    String mensaje="";
+ 
+    /*rescatando la conexion de la session*/
+    conexion=(Connection)session.getAttribute("conexion");
+ 
+    /*cerrando la conexion*/
+    conexion.close();
+ 
+    mensaje="conectado";
+    if(conexion.isClosed()){
+        mensaje="desconectado";
+    }
+%>
+<html>
+    <head>
+        <title>EJERCICIO 03 CONEXION BD CON JSP</title>
+    </head>
+    <body>
+        <form action="index.jsp" method="post">
+            <input name="estado" type="text" value="Estado: <%=mensaje%>"/>
+            <input type="submit" value="Conectar"/>
+        </form>
+    </body>
+</html>
